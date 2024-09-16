@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internships</title>
+</head>
+<body>
+    <h2>Internships</h2>
+<ul>
+    {% for internship in internships %}
+        <li>{{ internship.title }} at {{ internship.company }} - {{ internship.location }}</li>
+        <p>Pre-requisites: {{ internship.pre_requisites }}</p>
+
+        <!-- Form for applying to an internship -->
+        <form action="{{ url_for('apply_internship', internship_id=internship.id) }}" method="post">
+            <input type="hidden" name="internship_id" value="{{ internship.id }}">
+            <label for="application_text">Why are you interested?</label><br>
+            <textarea id="application_text" name="application_text" required></textarea><br>
+            <button type="submit">Apply</button>
+        </form>
+    {% endfor %}
+</ul>
+</body>
+</html>

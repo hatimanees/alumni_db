@@ -1,0 +1,15 @@
+<h2>My Internship Applications</h2>
+<table border="1">
+    <tr>
+        <th>Internship</th>
+        <th>Application</th>
+        <th>Application Status</th>
+    </tr>
+    {% for application in applications %}
+    <tr>
+        <td>{{ application.title }}</td>
+        <td>{{ application.application_text }}</td>
+        <td>{{ application.internship_application_status }}</td>
+    </tr>
+    {% endfor %}
+</table>

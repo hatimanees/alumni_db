@@ -1,0 +1,6 @@
+<h2>Events</h2>
+<ul>
+    {% for event in events %}
+        <li>{{ event.name }} on {{ event.date }} - <a href="#">Register</a></li>
+    {% endfor %}
+</ul>

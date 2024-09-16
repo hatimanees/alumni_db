@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Event</title>
+</head>
+<body>
+    <h2>Apply for Event: {{ event.title }}</h2>
+    <p><strong>Description:</strong> {{ event.description }}</p>
+    <p><strong>Date:</strong> {{ event.date }}</p>
+    <p><strong>Location:</strong> {{ event.location }}</p>
+
+    <form action="{{ url_for('apply_event', event_id=event.id) }}" method="post">
+        <label for="note">Note to Faculty:</label><br>
+        <textarea name="note" id="note" rows="4"></textarea><br><br>
+
+        <button type="submit">Submit Application</button>
+    </form>
+</body>
+</html>

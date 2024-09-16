@@ -1,0 +1,28 @@
+<h2>Event Applications</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Alumni Name</th>
+            <th>Event Title</th>
+            <th>Note</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for application in applications %}
+        <tr>
+            <td>{{ application.alumni_name }}</td>
+            <td>{{ application.title }}</td>
+            <td>{{ application.note }}</td>
+            <td>{{ application.event_application_status | capitalize }}</td>
+            <td>
+                <!-- Form for updating the status to 'coming' -->
+                <form action="{{ url_for('update_event_application_status', application_id=application.id, status='coming') }}" method="post" class="actions-form">
+                    <button type="submit">Mark as Coming</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

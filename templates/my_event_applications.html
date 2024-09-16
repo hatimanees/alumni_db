@@ -1,0 +1,19 @@
+<h2>My Event Applications</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Event Title</th>
+            <th>Note</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for application in applications %}
+        <tr>
+            <td>{{ application.title }}</td>
+            <td>{{ application.note }}</td>
+            <td>{{ application.event_application_status | capitalize }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

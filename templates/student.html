@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+</head>
+<body>
+    <h2>Welcome, Student</h2>
+    <ul>
+        <li><a href="{{ url_for('student_events') }}">Events</a></li>
+        <li><a href="{{ url_for('jobs') }}">Jobs</a></li>
+        <li><a href="{{ url_for('internships') }}">Internships</a></li>
+        <li><a href="{{ url_for('projects') }}">Projects</a></li>
+        <li><a href="{{ url_for('my_internship_applications') }}">Internships Applications</a></li>
+        <li><a href="{{ url_for('my_job_applications') }}">Job Applications</a></li>
+    </ul>
+    <h3>Alumni Information</h3>
+    <ul>
+        {% for alumni in data %}
+        <li>{{ alumni.first_name }} {{ alumni.last_name }} - {{ alumni.department }} - {{ alumni.job_title }}</li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

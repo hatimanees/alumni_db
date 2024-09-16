@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+</head>
+<body>
+    <h2>Edit Profile</h2>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('edit_profile') }}">
+        <label>First Name:</label><br>
+        <input type="text" name="first_name" value="{{ alumni.first_name }}" required><br>
+
+        <label>Last Name:</label><br>
+        <input type="text" name="last_name" value="{{ alumni.last_name }}" required><br>
+
+        <label>Email:</label><br>
+        <input type="email" name="email" value="{{ alumni.email }}" required><br>
+
+        <label>Phone Number:</label><br>
+        <input type="text" name="phone_number" value="{{ alumni.phone_number }}"><br>
+
+        <label>Graduation Year:</label><br>
+        <input type="number" name="graduation_year" value="{{ alumni.graduation_year }}" required><br>
+
+        <label>Degree:</label><br>
+        <input type="text" name="degree" value="{{ alumni.degree }}" required><br>
+
+        <label>Department:</label><br>
+        <select name="department" required>
+            <option value="BBA" {% if alumni.department == 'BBA' %}selected{% endif %}>BBA</option>
+            <option value="BBADS" {% if alumni.department == 'BBADS' %}selected{% endif %}>BBADS</option>
+            <option value="BHM" {% if alumni.department == 'BHM' %}selected{% endif %}>BHM</option>
+        </select><br>
+
+        <label>Current Employer:</label><br>
+        <input type="text" name="current_employer" value="{{ alumni.current_employer }}"><br>
+
+        <label>Job Title:</label><br>
+        <input type="text" name="job_title" value="{{ alumni.job_title }}"><br>
+
+        <label>Location:</label><br>
+        <input type="text" name="location" value="{{ alumni.location }}"><br>
+
+        <label>LinkedIn Profile:</label><br>
+        <input type="url" name="linkedin_profile" value="{{ alumni.linkedin_profile }}"><br>
+
+        <label>Profile Picture:</label><br>
+        <input type="file" name="profile_picture" accept="image/*"><br>
+
+        <label>Biography:</label><br>
+        <textarea name="biography">{{ alumni.biography }}</textarea><br>
+
+        <button type="submit">Update Profile</button>
+    </form>
+</body>
+</html>

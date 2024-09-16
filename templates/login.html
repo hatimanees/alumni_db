@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="static/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+
+<header class="main-header">
+		<div class="header-content">
+
+		</div>
+		<div class="logo">
+
+		</div>
+	</header>
+	<div class="container">
+		<div class="LoginHeader">
+			<h1>SBM</h1>
+			<p>Alumni Management System</p>
+		</div>
+		<div class="loginBody">
+			<form action="{{ url_for('login') }}" method="post">
+
+				<div class="loginInputContainer">
+                    <input placeholder="User Name" type="text" id="username" name="username" required/>
+				</div>
+				<div class="loginInputContainer">
+					<input placeholder="Password" type="password" id="password" name="password" required/>
+				</div>
+
+				<div class="loginButtonContainer">
+					<button>login</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</body>
+</html>

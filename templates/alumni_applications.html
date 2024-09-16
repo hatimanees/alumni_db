@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumni Applications</title>
+</head>
+<body>
+    <h2>Your Applications</h2>
+    <table border="1">
+        <tr>
+            <th>Type</th>
+            <th>Title</th>
+            <th>Status</th>
+        </tr>
+        {% for application in applications %}
+        <tr>
+            <td>{{ application.type.capitalize() }}</td>
+            <td>{{ application.title }}</td>
+            <td>{{ application.status.capitalize() }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="{{ url_for('alumni_dashboard') }}">Back to Dashboard</a>
+</body>
+</html>

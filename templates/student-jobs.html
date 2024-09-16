@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobs</title>
+</head>
+<body>
+    <h2>Jobs</h2>
+    <ul>
+        {% for job in jobs %}
+            <li>{{ job.title }} at {{ job.company }} - {{ job.location }}</li>
+            <p>Pre-requisites: {{ job.pre_requisites }}</p>
+            <p>Job Description: {{ job.description }}</p>
+
+            <!-- Form for applying to a job -->
+            <form action="{{ url_for('apply_job', job_id=job.id) }}" method="post">
+                <input type="hidden" name="job_id" value="{{ job.id }}">
+                <label for="application_text">Why are you interested?</label><br>
+                <textarea id="application_text" name="application_text" required></textarea><br>
+                <button type="submit">Apply</button>
+            </form>
+        {% endfor %}
+    </ul>
+</body>
+</html>

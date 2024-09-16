@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Internship Applications</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .actions-form {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <h2>Internship Applications for Your Posted Internships</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Internship Title</th>
+                <th>Application</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for application in applications %}
+            <tr>
+                <td>{{ application.student_name }}</td>
+                <td>{{ application.internship_title }}</td>
+                <td>{{ application.application_text }}</td>
+                <td>{{ application.internship_application_status | capitalize }}</td>
+                <td>
+                    <!-- Form for approving the application -->
+                    <form action="{{ url_for('update_internship_application_status', application_id=application.id, status='approved') }}" method="post" class="actions-form">
+                        <button type="submit">Approve</button>
+                    </form>
+                    <!-- Form for rejecting the application -->
+                    <form action="{{ url_for('update_internship_application_status', application_id=application.id, status='rejected') }}" method="post" class="actions-form">
+                        <button type="submit">Reject</button>
+                    </form>
+
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

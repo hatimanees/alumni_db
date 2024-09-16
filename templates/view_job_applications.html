@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Job Applications</title>
+    <style>
+        .application-container {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .application-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .application-body {
+            margin-bottom: 10px;
+        }
+        .application-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .application-actions form {
+            display: inline;
+        }
+    </style>
+</head>
+<body>
+    <h2>Job Applications for Your Posted Jobs</h2>
+
+    {% for application in applications %}
+    <div class="application-container">
+        <div class="application-header">
+            <p>Student Name: {{ application.student_name }}</p>
+            <p>Job Title: {{ application.job_title }}</p>
+        </div>
+
+        <div class="application-body">
+            <p>Application: {{ application.application_text }}</p>
+            <p>Status: {{ application.job_application_status | capitalize }}</p>
+        </div>
+
+        <div class="application-actions">
+                <form action="{{ url_for('update_job_application_status', application_id=application.id, status='approved') }}" method="post">
+                    <button type="submit">Approve</button>
+                </form>
+
+                <!-- Form for rejecting the application -->
+                <form action="{{ url_for('update_job_application_status', application_id=application.id, status='rejected') }}" method="post">
+                    <button type="submit">Reject</button>
+                </form>
+        </div>
+    </div>
+    {% endfor %}
+
+</body>
+</html>
