@@ -6,13 +6,15 @@
     <title>Events</title>
 </head>
 <body>
-    <h2>Events</h2>
+    <h2>Upcoming Events</h2>
     <ul>
         {% for event in events %}
-        <li>{{ event.name }} - {{ event.date }}</li>
-        <p>Pre-requisites: {{ event.pre_requisites }}</p>
-</form>
-
+        <li>
+            <strong>{{ event.title }}</strong> - {{ event.date }}<br>
+            <em>Location:</em> {{ event.location }}<br>
+            <p><strong>Description:</strong> {{ event.description }}</p>
+            <p><strong>Created At:</strong> {{ event.created_at }}</p>
+        </li>
         {% endfor %}
     </ul>
 </body>

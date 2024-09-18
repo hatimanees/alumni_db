@@ -22,20 +22,23 @@
 			<p>Alumni Management System</p>
 		</div>
 		<div class="loginBody">
-			<form action="{{ url_for('login') }}" method="post">
+    <form action="{{ url_for('login') }}" method="post">
+        <div class="loginInputContainer">
+            <input placeholder="User Name" type="text" id="username" name="username" required/>
+        </div>
+        <div class="loginInputContainer">
+            <input placeholder="Password" type="password" id="password" name="password" required/>
+        </div>
+        <div class="forgetpassword">
+        <a href="{{ url_for('request_reset') }}">Forgot Password?</a>
+        </div>
+        <div class="loginButtonContainer">
+            <button>Login</button>
+        </div>
+    </form>
 
-				<div class="loginInputContainer">
-                    <input placeholder="User Name" type="text" id="username" name="username" required/>
-				</div>
-				<div class="loginInputContainer">
-					<input placeholder="Password" type="password" id="password" name="password" required/>
-				</div>
+</div>
 
-				<div class="loginButtonContainer">
-					<button>login</button>
-				</div>
-			</form>
-		</div>
 	</div>
 </body>
 </html>

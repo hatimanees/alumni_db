@@ -85,3 +85,19 @@ div.loginButtonContainer button{
 	border:2px solid lightgrey;
 	background: rgba(229, 103, 23, 1.0);
 }
+
+div.forgetpassword a {
+    display: inline-block;      /* Make the link behave like a button */
+    color: white;               /* White text */
+    padding: 10px 20px;         /* Padding */
+    text-align: center;         /* Center the text */
+    text-decoration: none;      /* Remove underline */
+    border-radius: 5px;         /* Rounded corners */
+    font-size: 16px;            /* Font size */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+div.forgetpassword a:hover {
+    background-color: #45a049;  /* Darker green on hover */
+}
+

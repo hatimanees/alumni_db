@@ -3,6 +3,8 @@ import mysql.connector
 from mysql.connector import Error
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -14,6 +16,17 @@ db_config = {
     'password': 'HTMLshow@1234',
     'database': 'alumni_db'
 }
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465 # or 587 if using TLS
+app.config['MAIL_USE_SSL'] = True  # Use True if using port 465
+app.config['MAIL_USE_TLS'] = False  # Use True if using port 587
+app.config['MAIL_USERNAME'] = 'hatim.anees@bbadsh.christuniversity.in'
+app.config['MAIL_PASSWORD'] = 'htmlshow'
+app.config['MAIL_DEFAULT_SENDER'] = 'hatim.anees@bbadsh.christuniversity.in'
+
+mail = Mail(app)
+
 
 # Database connection
 def create_connection():
@@ -59,7 +72,69 @@ def login():
 
     return render_template('login.html')
 
+def generate_reset_token(user_id):
+    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    return s.dumps(user_id, salt='password-reset-salt')
 
+def verify_reset_token(token):
+    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        user_id = s.loads(token, salt='password-reset-salt', max_age=3600)
+    except:
+        return None
+    return user_id
+
+
+
+def send_reset_email(email, token):
+    reset_url = url_for('reset_password', token=token, _external=True)
+    msg = Message('Password Reset Request', sender='noreply@example.com', recipients=[email])
+    msg.body = f'''To reset your password, visit the following link:
+   {reset_url}
+
+   If you did not make this request, simply ignore this email.
+   '''
+    mail.send(msg)
+@app.route('/request_reset', methods=['GET', 'POST'])
+def request_reset():
+    if request.method == 'POST':
+        email = request.form['email']
+        conn = create_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+        user = cursor.fetchone()
+
+        if user:
+            # Generate reset token and send email
+            token = generate_reset_token(user['id'])
+            send_reset_email(user['email'], token)
+            return "An email has been sent with instructions to reset your password."
+        else:
+            return "Email does not exist."
+
+    return render_template('request_reset.html')
+
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    user_id = verify_reset_token(token)
+    if not user_id:
+        return "Invalid or expired token."
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+        # hashed_password = generate_password_hash(new_password)  # Hash the new password
+
+        conn = create_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("UPDATE users SET password=%s WHERE id=%s", (new_password, user_id))
+        conn.commit()
+
+        return "Your password has been reset."
+
+    return render_template('reset_password.html')
 
 # Alumni Dashboard
 @app.route('/alumni_dashboard')
