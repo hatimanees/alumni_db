@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, Response
+from flask import Flask, render_template, request, redirect, url_for, session, Response,flash
 import mysql.connector
 from mysql.connector import Error
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -893,6 +893,63 @@ def admin_dashboard():
     # Render the template with the cleaned response
     return render_template('admin.html', data=get_alumni_data(), response=response_content)
 
+
+# Route to approve or reject application
+@app.route('/admin_jobs')
+def admin_jobs():
+    conn = create_connection()
+    with conn.cursor(dictionary=True) as cursor:
+        cursor.execute("SELECT * FROM jobs WHERE status='pending'")
+        jobs = cursor.fetchall()
+    conn.close()
+    return render_template('admin_jobs.html', jobs=jobs)
+
+# Route to approve or reject job
+@app.route('/update_job_status/<int:job_id>', methods=['POST'])
+def update_job_status(job_id):
+    status = request.form.get('status')
+    if status not in ['approved', 'rejected']:
+        flash('Invalid status selected!', 'danger')
+        return redirect(url_for('admin_jobs'))
+
+    connection = create_connection()
+    with connection.cursor(dictionary=True) as cursor:
+        sql = "UPDATE jobs SET status = %s WHERE id = %s"
+        cursor.execute(sql, (status, job_id))
+        connection.commit()
+    connection.close()
+
+    flash('Job status updated successfully!', 'success')
+    return redirect(url_for('admin_jobs'))
+
+# Route to display internships
+@app.route('/admin_internships')
+def admin_internships():
+    connection = create_connection()
+    with connection.cursor(dictionary=True) as cursor:
+        cursor.execute("SELECT * FROM internships WHERE status='pending'")
+        internships = cursor.fetchall()
+        print(internships)
+    connection.close()
+    return render_template('admin_internships.html', internships=internships)
+
+# Route to approve or reject internship
+@app.route('/update_internship_status/<int:internship_id>', methods=['POST'])
+def update_internship_status(internship_id):
+    status = request.form.get('status')
+    if status not in ['approved', 'rejected']:
+        flash('Invalid status selected!', 'danger')
+        return redirect(url_for('admin_internships'))
+
+    connection = create_connection()
+    with connection.cursor(dictionary=True) as cursor:
+        sql = "UPDATE internships SET status = %s WHERE id = %s"
+        cursor.execute(sql, (status, internship_id))
+        connection.commit()
+    connection.close()
+
+    flash('Internship status updated successfully!', 'success')
+    return redirect(url_for('admin_internships'))
 
 def get_alumni_data():
     conn = create_connection()
