@@ -75,12 +75,13 @@
 
     {% for application in applications %}
     <div class="application-container">
-        <div class="application-header">
+        <div class="application-header" >
             <p>Student Name: {{ application.student_name }}</p>
             <p>Job Title: {{ application.job_title }}</p>
         </div>
 
-        <div class="application-body">
+        <div class="application-body" style="white-space: pre-wrap;">
+            <p>Application Summary: {{ application.llm_summary }}</p>
             <p>Application: {{ application.application_text }}</p>
             <p>Status: {{ application.job_application_status | capitalize }}</p>
         </div>

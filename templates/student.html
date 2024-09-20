@@ -16,11 +16,20 @@
         <li><a href="{{ url_for('my_job_applications') }}">Job Applications</a></li>
     </ul>
     <h3>Alumni Information</h3>
-    <ul>
-        {% for alumni in data %}
-        <li>{{ alumni.first_name }} {{ alumni.last_name }} - {{ alumni.department }} - {{ alumni.job_title }}</li>
-        {% endfor %}
-    </ul>
+        <h1>Enter Your Query</h1>
+    <form action="/student_dashboard" method="POST">
+        <label for="user_query">Query:</label>
+        <input type="text" id="user_query" name="user_query" required>
+        <button type="submit">Submit</button>
+    </form>
 
+    {% if response %}
+        <h2>Generated Response</h2>
+        <div style="white-space: pre-wrap;">
+            {{ response }}
+        </div>
+    {% endif %}
+</body>
+</html>
 </body>
 </html>

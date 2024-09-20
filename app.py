@@ -5,6 +5,71 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Mail, Message
+from langchain.prompts import PromptTemplate
+import google.generativeai as genai
+import os
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+
+GOOGLE_API_KEY = "AIzaSyD-aKe4IuKRRjJnBPQzVzNtJk6LiiALw0c"
+genai.configure(api_key=GOOGLE_API_KEY)
+
+os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    temperature=0,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+)
+
+prompt='''
+You are given a list of alumni, each represented by a dictionary that contains their details such as degree, department, current employer, job title, years of experience, working industry, biography, phone number, and LinkedIn profile URL.
+
+Here is the list of alumni:
+{context_variable}
+
+Your task is to evaluate the best candidates to speak at a conference based on the following user query:
+
+"{user_query}"
+
+The key criteria for selecting the candidates are:
+- Relevant degree and department
+- Current job title and employer
+- Number of years of working experience
+- Working industry
+- Biography (for additional relevant information)
+
+Please select the top candidates for this conference and provide the following details for each:
+- Name
+- Phone number
+- LinkedIn profile URL
+- Reason for selecting them (based on degree, department, experience, and other factors)
+
+Format the response as follows:
+1. Name: [Alumni Name]
+   - Phone Number: [Phone Number]
+   - LinkedIn Profile: [LinkedIn URL]
+   - Reason: [Explain why this alumni was selected]
+
+Proceed with selecting the best candidates.
+'''
+
+job_prompt = '''Please evaluate the following job application based on the provided job details and give it a score out of 10. After scoring, provide a summary (100 words) explaining the score.
+
+Job Details:
+
+Title: {title}
+Company: {company}
+Location: {location}
+Pre-requisites: {pre_requisites}
+Application Text: {application_text}
+
+Instructions:
+
+Assign a score out of 10 based on how well the application matches the job title, company, location, and pre-requisites.
+Provide a concise 100-word summary explaining the strengths and weaknesses of the application and justifying the score.'''
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -167,6 +232,8 @@ def edit_profile():
         department = request.form['department']
         current_employer = request.form['current_employer']
         job_title = request.form['job_title']
+        number_of_working_experience = request.form['number_of_working_experience']
+        working_industry = request.form['working_industry']
         location = request.form['location']
         linkedin_profile = request.form['linkedin_profile']
         biography = request.form['biography']
@@ -188,13 +255,13 @@ def edit_profile():
                     UPDATE alumni
                     SET first_name=%s, last_name=%s, email=%s, phone_number=%s, 
                         graduation_year=%s, degree=%s, department=%s, 
-                        current_employer=%s, job_title=%s, location=%s, 
+                        current_employer=%s, job_title=%s,number_of_working_experience=%s, working_industry=%s,location=%s, 
                         linkedin_profile=%s, profile_picture=%s, biography=%s
                     WHERE alumni_id=%s
                 """, (
                     first_name, last_name, email, phone_number,
                     graduation_year, degree, department,
-                    current_employer, job_title, location,
+                    current_employer, job_title,number_of_working_experience,working_industry, location,
                     linkedin_profile, profile_picture_data, biography, alumni_id
                 ))
             else:
@@ -203,13 +270,13 @@ def edit_profile():
                     UPDATE alumni
                     SET first_name=%s, last_name=%s, email=%s, phone_number=%s, 
                         graduation_year=%s, degree=%s, department=%s, 
-                        current_employer=%s, job_title=%s, location=%s, 
+                        current_employer=%s, job_title=%s,number_of_working_experience=%s, working_industry=%s, location=%s, 
                         linkedin_profile=%s, profile_picture=%s,biography=%s
                     WHERE alumni_id=%s
                 """, (
                     first_name, last_name, email, phone_number,
                     graduation_year, degree, department,
-                    current_employer, job_title, location,
+                    current_employer, job_title,number_of_working_experience,working_industry, location,
                     linkedin_profile,profile_picture_data, biography, alumni_id
                 ))
         else:
@@ -217,13 +284,13 @@ def edit_profile():
             cursor.execute("""
                 INSERT INTO alumni (alumni_id, first_name, last_name, email, phone_number, 
                                     graduation_year, degree, department, current_employer, 
-                                    job_title, location, linkedin_profile, profile_picture, 
+                                    job_title,number_of_working_experience,working_industry, location, linkedin_profile, profile_picture, 
                                     biography)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 alumni_id, first_name, last_name, email, phone_number,
                 graduation_year, degree, department, current_employer,
-                job_title, location, linkedin_profile, profile_picture_data, biography
+                job_title,number_of_working_experience,working_industry, location, linkedin_profile, profile_picture_data, biography
             ))
 
         conn.commit()
@@ -416,7 +483,7 @@ def view_job_applications():
 
     # Fetch all job applications for the jobs posted by this alumni
     cursor.execute("""
-        SELECT ja.id, u.username AS student_name, ja.application_text, j.title,ja.job_application_status AS job_title
+        SELECT ja.id, u.username AS student_name, ja.application_text,ja.llm_summary, j.title,ja.job_application_status AS job_title
         FROM jobs_applications ja
         JOIN users u ON ja.student_id = u.id
         JOIN jobs j ON ja.job_id = j.id
@@ -463,9 +530,52 @@ def admin_approve(type, id):
     return redirect(url_for('admin_dashboard'))  # Assuming there's an admin dashboard
 
 # student dashboard
-@app.route('/student_dashboard')
+@app.route('/student_dashboard', methods=['GET', 'POST'])
 def student_dashboard():
-    return render_template('student.html', data=get_alumni_data())
+    response_content = None
+    if request.method == 'POST':
+        user_query = request.form.get('user_query')  # Get the query from the form
+        if user_query:
+            # Create database connection
+            conn = None
+            try:
+                conn = create_connection()
+                cursor = conn.cursor(dictionary=True)
+
+                # Fetch alumni data
+                cursor.execute(
+                    "SELECT first_name, last_name, email, phone_number, graduation_year, degree, department, "
+                    "current_employer, job_title, number_of_working_experience, working_industry, location, "
+                    "linkedin_profile, biography FROM alumni"
+                )
+                context_variable = cursor.fetchall()
+
+                # Create the prompt template
+                prompt10 = PromptTemplate(
+                    template=prompt,
+                    input_variables=["context_variable", "user_query"]
+                )
+                # Create the chain
+                chain10 = prompt10 | llm
+                # Run the chain
+                response15 = chain10.invoke({"context_variable": context_variable, "user_query": user_query})
+
+                # Access the content attribute directly
+                response_content = response15.content
+
+                # Remove markdown formatting using regex
+                # This removes the ** or other unwanted symbols
+                response_content = re.sub(r'\*\*', '', response_content)
+
+            except Exception as e:
+                print(f"Error occurred: {e}")
+            finally:
+                if conn:
+                    conn.close()
+
+    # Render the template with the cleaned response
+    return render_template('student.html', data=get_alumni_data(), response=response_content)
+
 
 @app.route('/student_events')
 def student_events():
@@ -496,15 +606,41 @@ def apply_job():
     cursor = conn.cursor(dictionary=True)
 
     # Retrieve alumni_id associated with the job
-    cursor.execute("SELECT alumni_id FROM jobs WHERE id = %s AND status = 'approved'", (job_id,))
+    cursor.execute("SELECT * FROM jobs WHERE id = %s AND status = 'approved'", (job_id,))
     job = cursor.fetchone()
-
+    print(job)
     if job:
         alumni_id = job['alumni_id']
+        title = job['title']
+        company = job['company']
+        location = job['location']
+        pre_requisites = job['pre_requisites']
+        prompt1 = PromptTemplate(
+            template=job_prompt,
+            input_variables=["title", "company", "location", "pre_requisites", "application_text"]
+        )
+        chain10 = prompt1 | llm
+
+        # Run the chain and pass in the variables
+        response15 = chain10.invoke({
+            "title": title,
+            "company": company,
+            "location": location,
+            "pre_requisites": pre_requisites,
+            "application_text": application_text
+        })
+        # Access the content attribute directly
+        response_content = response15.content
+
+        # Remove markdown formatting using regex
+        response_content = re.sub(r'\*\*', '', response_content)
+
+        print(response_content)
+
         cursor.execute("""
-            INSERT INTO jobs_applications (student_id, job_id, alumni_id, application_text)
-            VALUES (%s, %s, %s, %s)
-        """, (student_id, job_id, alumni_id, application_text))
+            INSERT INTO jobs_applications (student_id, job_id, alumni_id, application_text,llm_summary)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (student_id, job_id, alumni_id, application_text, response_content))
         conn.commit()
         return redirect(url_for('student_dashboard'))
     else:
@@ -597,9 +733,54 @@ def projects():
 
 
 # Faculty dashboard
-@app.route('/faculty_dashboard')
+import re
+
+@app.route('/faculty_dashboard', methods=['GET', 'POST'])
 def faculty_dashboard():
-    return render_template('faculty.html', data=get_alumni_data())
+    response_content = None
+    if request.method == 'POST':
+        user_query = request.form.get('user_query')  # Get the query from the form
+        if user_query:
+            # Create database connection
+            conn = None
+            try:
+                conn = create_connection()
+                cursor = conn.cursor(dictionary=True)
+
+                # Fetch alumni data
+                cursor.execute(
+                    "SELECT first_name, last_name, email, phone_number, graduation_year, degree, department, "
+                    "current_employer, job_title, number_of_working_experience, working_industry, location, "
+                    "linkedin_profile, biography FROM alumni"
+                )
+                context_variable = cursor.fetchall()
+
+                # Create the prompt template
+                prompt10 = PromptTemplate(
+                    template=prompt,
+                    input_variables=["context_variable", "user_query"]
+                )
+                # Create the chain
+                chain10 = prompt10 | llm
+                # Run the chain
+                response15 = chain10.invoke({"context_variable": context_variable, "user_query": user_query})
+
+                # Access the content attribute directly
+                response_content = response15.content
+
+                # Remove markdown formatting using regex
+                # This removes the ** or other unwanted symbols
+                response_content = re.sub(r'\*\*', '', response_content)
+
+            except Exception as e:
+                print(f"Error occurred: {e}")
+            finally:
+                if conn:
+                    conn.close()
+
+    # Render the template with the cleaned response
+    return render_template('faculty.html', data=get_alumni_data(), response=response_content)
+
 
 @app.route('/post_event', methods=['GET', 'POST'])
 def post_event():
@@ -666,17 +847,79 @@ def update_event_application_status(application_id, status):
     return redirect(url_for('view_event_applications'))
 
 
-@app.route('/admin_dashboard')
+@app.route('/admin_dashboard', methods=['GET', 'POST'])
 def admin_dashboard():
-    return render_template('admin.html', data=get_alumni_data())
+    response_content = None
+    if request.method == 'POST':
+        user_query = request.form.get('user_query')  # Get the query from the form
+        if user_query:
+            # Create database connection
+            conn = None
+            try:
+                conn = create_connection()
+                cursor = conn.cursor(dictionary=True)
+
+                # Fetch alumni data
+                cursor.execute(
+                    "SELECT first_name, last_name, email, phone_number, graduation_year, degree, department, "
+                    "current_employer, job_title, number_of_working_experience, working_industry, location, "
+                    "linkedin_profile, biography FROM alumni"
+                )
+                context_variable = cursor.fetchall()
+
+                # Create the prompt template
+                prompt10 = PromptTemplate(
+                    template=prompt,
+                    input_variables=["context_variable", "user_query"]
+                )
+                # Create the chain
+                chain10 = prompt10 | llm
+                # Run the chain
+                response15 = chain10.invoke({"context_variable": context_variable, "user_query": user_query})
+
+                # Access the content attribute directly
+                response_content = response15.content
+
+                # Remove markdown formatting using regex
+                # This removes the ** or other unwanted symbols
+                response_content = re.sub(r'\*\*', '', response_content)
+
+            except Exception as e:
+                print(f"Error occurred: {e}")
+            finally:
+                if conn:
+                    conn.close()
+
+    # Render the template with the cleaned response
+    return render_template('admin.html', data=get_alumni_data(), response=response_content)
+
 
 def get_alumni_data():
     conn = create_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM alumni")
+    cursor.execute("SELECT first_name, last_name, email, phone_number,graduation_year, degree, department, current_employer, job_title,number_of_working_experience,working_industry, location, linkedin_profile,biography FROM alumni")
     data = cursor.fetchall()
+    print(data)
     conn.close()
     return data
+
+
+@app.route('/process_query', methods=['POST'])
+def process_query():
+    user_query = request.form['user_query']  # Get the query from the form
+    conn = create_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT first_name, last_name, email, phone_number,graduation_year, degree, department, current_employer, job_title,number_of_working_experience,working_industry, location, linkedin_profile,biography FROM alumni")
+    context_variable = cursor.fetchall()
+    conn.close()
+    # Run the chain
+    prompt10 = PromptTemplate(
+        template=prompt,
+        input_variables=["context_variable", "user_query"]
+    )
+    chain10 = prompt10 | llm
+    response15 = chain10.invoke({"context_variable": context_variable, "user_query": user_query})
+    return render_template('response.html', response=response15)
 
 if __name__ == "__main__":
     app.run(debug=True)

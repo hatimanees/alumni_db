@@ -8,14 +8,23 @@
 <body>
     <h2>Welcome, Faculty</h2>
     <ul>
-      <li><a href="{{ url_for('post_event') }}">Post Event</a></li>
-      <li><a href="{{ url_for('view_event_applications') }}">View Event Applications</a></li>
+        <li><a href="{{ url_for('post_event') }}">Post Event</a></li>
+        <li><a href="{{ url_for('view_event_applications') }}">View Event Applications</a></li>
     </ul>
+
     <h3>Alumni Information</h3>
-    <ul>
-        {% for alumni in data %}
-        <li>{{ alumni.first_name }} {{ alumni.last_name }} - {{ alumni.department }} - {{ alumni.job_title }}</li>
-        {% endfor %}
-    </ul>
+    <h1>Enter Your Query</h1>
+    <form action="/faculty_dashboard" method="POST">
+        <label for="user_query">Query:</label>
+        <input type="text" id="user_query" name="user_query" required>
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if response %}
+        <h2>Generated Response</h2>
+        <div style="white-space: pre-wrap;">
+            {{ response }}
+        </div>
+    {% endif %}
 </body>
 </html>
